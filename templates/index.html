@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntroFY AI  - Analysis Page</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-purple: #6a11cb;
+            --deep-purple: #2575fc;
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 0% 0%, #fdfbfb 0%, #ebedee 100%);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background: 
+                radial-gradient(circle at top left, #f3e7e9 0%, transparent 40%),
+                radial-gradient(circle at bottom right, #e3eeff 0%, transparent 40%),
+                linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* Decorative Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.6;
+        }
+        .orb-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: linear-gradient(45deg, #e0c3fc, #8ec5fc); }
+        .orb-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: linear-gradient(45deg, #a18cd1, #fbc2eb); }
+
+        .app-wrapper {
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 0.2rem;
+            background: linear-gradient(to right, #6a11cb 0%, #2575fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: #6c5ce7;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-light);
+            max-width: 600px;
+            margin: 0 auto 3rem auto;
+            background: rgba(255,255,255,0.4);
+            padding: 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        .input-container {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05), inset 0 0 0 1px rgba(255,255,255,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 30px 60px rgba(106, 17, 203, 0.1);
+        }
+
+        .nav-pills {
+            display: inline-flex;
+            background: rgba(235, 237, 240, 0.7);
+            padding: 5px;
+            border-radius: 50px;
+            margin-bottom: 25px;
+        }
+
+        .nav-btn {
+            padding: 10px 30px;
+            border-radius: 40px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #636e72;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.active {
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+        }
+
+        textarea {
+            width: 100%;
+            padding: 20px;
+            border: 2px solid transparent;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            resize: vertical;
+            min-height: 180px;
+            font-family: inherit;
+            font-size: 1rem;
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        textarea:focus {
+            outline: none;
+            background: #fff;
+            border-color: #a18cd1;
+            box-shadow: 0 0 0 4px rgba(161, 140, 209, 0.2);
+        }
+
+        .upload-zone {
+            border: 2px dashed #a18cd1;
+            background: rgba(240, 240, 255, 0.3);
+            border-radius: 16px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone:hover {
+            background: rgba(240, 240, 255, 0.6);
+            border-color: #6a11cb;
+            transform: scale(1.01);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            background: linear-gradient(to bottom, #a18cd1, #fbc2eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .duration-group {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.8);
+            padding: 10px 20px;
+            border-radius: 12px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid rgba(255,255,255,1);
+        }
+
+        .duration-group input {
+            border: none;
+            background: transparent;
+            font-size: 1.1rem;
+            width: 80px;
+            text-align: center;
+            color: #6a11cb;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .duration-group input:focus { outline: none; }
+
+        .cta-btn {
+            margin-top: 30px;
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(to right, #8E2DE2, #4A00E0);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(74, 0, 224, 0.2);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(74, 0, 224, 0.3);
+            background: linear-gradient(to right, #7b1fa2, #4527a0);
+        }
+
+        .hidden { display: none; }
+        .flash-bar {
+            background: linear-gradient(to right, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            color: #b71c1c;
+            padding: 12px 24px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(255, 154, 158, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="app-wrapper">
+        <div class="header-section">
+            <h1>IntroFY AI</h1>
+            <p class="tagline">Intro. Verify. Score.</p>
+            <p class="description">
+                Elevate your communication skills with our advanced AI analysis. 
+                Our engine evaluates <strong>grammar, clarity, sentiment, and structural flow</strong> to provide actionable, rubric-based feedback instantly.
+            </p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-bar"><i class="fas fa-exclamation-circle"></i> {{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/analyze" method="POST" enctype="multipart/form-data" class="input-container">
+            <div class="nav-pills">
+                <button type="button" class="nav-btn active" onclick="switchTab('paste')"><i class="fas fa-pen"></i> Paste Text</button>
+                <button type="button" class="nav-btn" onclick="switchTab('upload')"><i class="fas fa-cloud-upload-alt"></i> Upload Transcript</button>
+            </div>
+
+            <!-- Paste Section -->
+            <div id="paste-section">
+                <textarea name="text_input" id="text_input" placeholder="Start typing your introduction or paste your speech transcript here for instant analysis..."></textarea>
+            </div>
+
+            <!-- Upload Section -->
+            <div id="upload-section" class="hidden">
+                <div class="upload-zone" onclick="document.getElementById('file_upload').click()">
+                    <i class="fas fa-file-alt upload-icon"></i>
+                    <h3>Drop your transcript file here</h3>
+                    <p style="color: #888; font-size: 0.9rem;">Supports .txt and .docx</p>
+                    <input type="file" name="file_upload" id="file_upload" style="display: none;" onchange="updateFileName()">
+                    <div id="file-name" style="margin-top: 15px; font-weight: 600; color: #6a11cb;"></div>
+                </div>
+            </div>
+
+            <div class="duration-group">
+                <label for="duration" style="color:#666; font-size: 0.9rem;"><i class="far fa-clock"></i> Speech Duration:</label>
+                <input type="number" name="duration" id="duration" placeholder="60s" required min="1">
+            </div>
+
+            <button type="submit" class="cta-btn">Analyze Intro<i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
+        </form>
+    </div>
+
+    <!-- JAVASCRIPT EMBEDDED DIRECTLY -->
+    <script>
+        function switchTab(tab) {
+            const pasteSection = document.getElementById('paste-section');
+            const uploadSection = document.getElementById('upload-section');
+            const buttons = document.querySelectorAll('.nav-btn');
+
+            if (tab === 'paste') {
+                pasteSection.classList.remove('hidden');
+                uploadSection.classList.add('hidden');
+                buttons[0].classList.add('active');
+                buttons[1].classList.remove('active');
+            } else {
+                pasteSection.classList.add('hidden');
+                uploadSection.classList.remove('hidden');
+                buttons[0].classList.remove('active');
+                buttons[1].classList.add('active');
+            }
+        }
+
+        function updateFileName() {
+            const input = document.getElementById('file_upload');
+            const div = document.getElementById('file-name');
+            if(input.files.length > 0) {
+                div.innerHTML = '<i class="fas fa-check-circle"></i> ' + input.files[0].name;
+            }
+        }
+    </script>
+</body>
+</html>

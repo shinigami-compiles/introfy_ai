@@ -1,0 +1,3 @@
+vir_env/
+en_core_web_sm/
+*.dist-info/

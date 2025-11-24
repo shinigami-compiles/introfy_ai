@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results - IntroFY AI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-purple: #6a11cb;
+            --deep-purple: #2575fc;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+        }
+
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.5); }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #a18cd1 0%, #fbc2eb 100%); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #6a11cb 0%, #2575fc 100%); }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 0% 0%, #fdfbfb 0%, #ebedee 100%);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background: 
+                radial-gradient(circle at top left, #f3e7e9 0%, transparent 40%),
+                radial-gradient(circle at bottom right, #e3eeff 0%, transparent 40%),
+                linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.5; }
+        .orb-1 { top: -5%; left: -5%; width: 400px; height: 400px; background: #e0c3fc; }
+        .orb-2 { bottom: 10%; right: -5%; width: 500px; height: 500px; background: #a18cd1; }
+
+        .container { max-width: 1000px; margin: 0 auto; animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        .header-nav { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .back-link {
+            text-decoration: none; color: #4a4a4a; font-weight: 600; padding: 10px 20px;
+            border-radius: 30px; background: rgba(255,255,255,0.5); backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border); transition: all 0.3s ease;
+        }
+        .back-link:hover { background: white; transform: translateX(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); color: #6a11cb; }
+
+        .score-dashboard { display: grid; grid-template-columns: 1fr 2fr; gap: 25px; margin-bottom: 40px; }
+
+        .score-panel {
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; position: relative; overflow: hidden;
+        }
+
+        .score-panel::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+            background: linear-gradient(90deg, #8E2DE2, #4A00E0, #00d2ff); background-size: 200% 200%;
+            animation: gradientMove 3s ease infinite;
+        }
+
+        .circular-chart { display: block; margin: 0 auto 20px; max-width: 180px; max-height: 180px; filter: drop-shadow(0 10px 15px rgba(106, 17, 203, 0.2)); }
+        .circle-bg { fill: none; stroke: rgba(161, 140, 209, 0.2); stroke-width: 2.5; }
+        .circle { fill: none; stroke-width: 2.5; stroke-linecap: round; animation: progress 1.5s ease-out forwards; }
+        .percentage { fill: #4A00E0; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.5em; text-anchor: middle; }
+
+        @keyframes progress { 0% { stroke-dasharray: 0 100; } }
+        @keyframes gradientMove { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .score-msg { font-size: 1.3rem; font-weight: 700; background: linear-gradient(45deg, #6a11cb, #2575fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .transcript-panel {
+            background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border); border-radius: 30px; padding: 30px;
+            display: flex; flex-direction: column;
+        }
+        .panel-title { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 15px; font-weight: 700; }
+        .transcript-box {
+            flex-grow: 1; font-family: 'Inter', sans-serif; background: rgba(255,255,255,0.6);
+            padding: 20px; border-radius: 20px; color: #555; font-size: 1rem; line-height: 1.7;
+            border: 1px solid rgba(255,255,255,0.8); max-height: 250px; overflow-y: auto;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .section-title { font-size: 1.5rem; margin: 40px 0 20px; font-weight: 800; color: #333; display: flex; align-items: center; }
+        .section-title i { margin-right: 10px; color: #a18cd1; }
+
+        .criteria-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; padding-bottom: 40px; }
+        .criteria-card {
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 25px;
+            border-radius: 24px; border: 1px solid rgba(255,255,255,0.6);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
+        }
+        .criteria-card:hover { transform: translateY(-8px); background: rgba(255, 255, 255, 0.9); box-shadow: 0 20px 40px rgba(106, 17, 203, 0.15); border-color: #a18cd1; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; }
+        .criteria-name { font-size: 1.1rem; font-weight: 700; color: #444; }
+        .criteria-value { font-size: 1.4rem; font-weight: 900; background: linear-gradient(45deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .progress-track { background: rgba(0,0,0,0.05); height: 10px; border-radius: 20px; overflow: hidden; margin-bottom: 15px; }
+        .progress-fill { height: 100%; border-radius: 20px; width: 0%; transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .grad-success { background: linear-gradient(90deg, #00b09b 0%, #96c93d 100%); }
+        .grad-warning { background: linear-gradient(90deg, #f6d365 0%, #fda085 100%); }
+        .grad-danger { background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 100%); }
+        
+        .feedback-box { font-size: 0.9rem; color: #666; background: rgba(255,255,255,0.5); padding: 12px; border-radius: 12px; border-left: 3px solid #a18cd1; }
+
+        @media (max-width: 768px) { .score-dashboard { grid-template-columns: 1fr; } .container { padding: 10px; } }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="container">
+        <div class="header-nav">
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> New Analysis</a>
+            <div style="font-weight:700; color:#6a11cb; letter-spacing:1px;">INTROFY AI RESULT</div>
+        </div>
+
+        <div class="score-dashboard">
+            <div class="score-panel">
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path class="circle" stroke-dasharray="{{ score }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" style="stroke: url(#scoreGradient)" />
+                    <defs>
+                        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#8E2DE2" />
+                            <stop offset="100%" stop-color="#4A00E0" />
+                        </linearGradient>
+                    </defs>
+                    <text x="18" y="20.35" class="percentage">{{ score }}%</text>
+                </svg>
+                <div class="score-msg">
+                    {% if score >= 90 %} Excellent! 🌟
+                    {% elif score >= 75 %} Great Job! 🚀
+                    {% elif score >= 50 %} Good Effort 👍
+                    {% else %} Keep Practicing 📚 {% endif %}
+                </div>
+            </div>
+
+            <div class="transcript-panel">
+                <div class="panel-title"><i class="fas fa-quote-left"></i> Analyzed Transcript</div>
+                <div class="transcript-box">"{{ transcript_snippet }}"</div>
+            </div>
+        </div>
+
+        <div class="section-title"><i class="fas fa-chart-pie"></i> Performance Breakdown</div>
+
+        <div class="criteria-grid">
+            {% for item in breakdown %}
+            <div class="criteria-card">
+                <div class="card-header">
+                    <span class="criteria-name">{{ item.criteria }}</span>
+                    <span class="criteria-value">{{ item.score }}/{{ item.max }}</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill 
+                        {% if item.score / item.max >= 0.8 %}grad-success
+                        {% elif item.score / item.max >= 0.5 %}grad-warning
+                        {% else %}grad-danger{% endif %}" 
+                        style="width: {{ (item.score / item.max) * 100 }}%;">
+                    </div>
+                </div>
+                <div class="feedback-box">{{ item.feedback }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT ANIMATIONS EMBEDDED -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate Main Score
+            const percentageText = document.querySelector('.percentage');
+            if (percentageText) {
+                const finalScore = parseInt(percentageText.textContent);
+                animateValue(percentageText, 0, finalScore, 1500);
+            }
+
+            // Animate Criteria Scores
+            const criteriaValues = document.querySelectorAll('.criteria-value');
+            criteriaValues.forEach(el => {
+                const text = el.innerText;
+                const [score, max] = text.split('/').map(Number);
+                animateValue(el, 0, score, 1500, "/" + max);
+            });
+
+            // Helper: Smooth Counter
+            function animateValue(obj, start, end, duration, suffix = "%") {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const easeOutQuad = progress * (2 - progress); 
+                    const currentVal = Math.floor(easeOutQuad * (end - start) + start);
+                    obj.innerHTML = currentVal + suffix;
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    } else {
+                        obj.innerHTML = end + suffix;
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+        });
+    </script>
+</body>
+</html>
