@@ -1,11 +1,4 @@
 import spacy
-
-# LanguageTool is optional: available on Render/GitHub, may be missing or broken locally
-try:
-    import language_tool_python
-except ImportError:
-    language_tool_python = None
-
 import nltk
 import re
 import numpy as np
@@ -32,31 +25,18 @@ class IntroFY:
             print("Spacy failed to load, falling back to blank 'en' model:", e)
             self.nlp = spacy.blank("en")
 
-        # --- Grammar: LanguageTool (optional) + safe fallback ---
-        self.tool = None
-        if language_tool_python is not None:
-            try:
-                # Try local LanguageTool server (on platforms where it works)
-                self.tool = language_tool_python.LanguageTool('en-US')
-                print("LanguageTool (local server) initialized.")
-            except Exception as e:
-                print("Local LanguageTool failed, trying public API:", e)
-                try:
-                    # Use public HTTP API (works without Java or local server)
-                    self.tool = language_tool_python.LanguageToolPublicAPI('en-US')
-                    print("LanguageToolPublicAPI initialized.")
-                except Exception as e2:
-                    print("LanguageTool completely unavailable, using fallback grammar:", e2)
-                    self.tool = None
-        else:
-            print("language_tool_python not installed. Using fallback grammar scoring.")
+        # NO LanguageTool here – grammar is handled by fallback logic only
 
         # Load VADER for Sentiment
         self.sentiment_analyzer = SentimentIntensityAnalyzer()
 
-        # Load Sentence Transformer for Semantic Similarity
-        # 'all-MiniLM-L6-v2' is fast and accurate for this use case
-        self.semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+        # Load Sentence Transformer for Semantic Similarity (heavy model)
+        try:
+            self.semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+            print("SentenceTransformer model loaded.")
+        except Exception as e:
+            print("Failed to load SentenceTransformer model, disabling semantic similarity:", e)
+            self.semantic_model = None
 
         # Define Rubric Constants (Derived from CSV)
         self.filler_words = [
@@ -81,7 +61,6 @@ class IntroFY:
 
         wpm = (word_count / duration_sec) * 60
 
-        # Scoring Logic from CSV
         if 111 <= wpm <= 140:
             score = 10
             feedback = "Perfect pace (Ideal)."
@@ -102,41 +81,12 @@ class IntroFY:
 
     def calculate_grammar(self, text, word_count):
         """
-        Grammar scoring.
-
-        If LanguageTool is available (Render / cloud), use it.
-        Otherwise, fall back to a heuristic grammar score so local runs don't break.
+        Grammar scoring via heuristic fallback (no LanguageTool).
+        This is stable everywhere (local + Render).
         """
         if word_count == 0:
             return 0, "Empty text provided."
 
-        # --- Path 1: Use LanguageTool when available ---
-        if self.tool is not None:
-            try:
-                matches = self.tool.check(text)
-                error_count = len(matches)
-
-                errors_per_100 = (error_count * 100) / word_count
-                metric = 1 - min(errors_per_100 / 10, 1)
-
-                if metric > 0.9:
-                    score = 10
-                elif 0.7 <= metric <= 0.89:
-                    score = 8
-                elif 0.5 <= metric <= 0.69:
-                    score = 6
-                elif 0.3 <= metric <= 0.49:
-                    score = 4
-                else:
-                    score = 2
-
-                return score, f"{error_count} grammar issues detected. (LanguageTool score: {metric:.2f})"
-            except Exception as e:
-                # If LT fails at runtime (network, API, etc.), fall through to heuristic fallback
-                print("LanguageTool error during grammar check, using fallback:", e)
-
-        # --- Path 2: Fallback heuristic (no LanguageTool) ---
-        # Simple rules: sentence-end punctuation, capitalisation, 'i' vs 'I'
         sentences = sent_tokenize(text)
         sentences = [s.strip() for s in sentences if s.strip()]
 
@@ -177,7 +127,6 @@ class IntroFY:
     def calculate_vocabulary(self, text, word_count):
         """Rubric: TTR = Distinct words / Total words"""
         tokens = word_tokenize(text.lower())
-        # Filter out punctuation to get pure words
         words = [word for word in tokens if word.isalpha()]
 
         if not words:
@@ -186,7 +135,6 @@ class IntroFY:
         unique_words = set(words)
         ttr = len(unique_words) / len(words)
 
-        # CSV Thresholds
         if 0.9 <= ttr <= 1.0:
             score = 10
         elif 0.7 <= ttr <= 0.89:
@@ -210,7 +158,6 @@ class IntroFY:
 
         rate = (filler_count / word_count) * 100
 
-        # CSV Thresholds
         if 0 <= rate <= 3:
             score = 15
         elif 4 <= rate <= 6:
@@ -230,10 +177,8 @@ class IntroFY:
         metric = scores['pos']
         compound = scores['compound']
 
-        # If text is highly positive overall, treat it as high engagement
         final_metric = max(metric, compound)
 
-        # Logic Table
         if final_metric >= 0.9:
             score = 15
         elif 0.7 <= final_metric <= 0.89:
@@ -262,7 +207,6 @@ class IntroFY:
         has_salutation = any(s in text_lower[:60] for s in salutations)
         score_salutation = 5 if has_salutation else 0
 
-        # B. KEYWORDS & ENTITIES (30 Marks Total)
         detected = []
         score_content = 0
 
@@ -308,11 +252,10 @@ class IntroFY:
             score_content += 4
             detected.append("Unique Fact")
 
-        # Cap Content Score at 30
         score_content = min(score_content, 30)
 
         # C. FLOW (5 Marks)
-        has_closing = "thank" in text_lower[-150:]  # Check last portion
+        has_closing = "thank" in text_lower[-150:]
 
         score_flow = 0
         if has_salutation and has_closing:
@@ -328,50 +271,49 @@ class IntroFY:
         }
 
     def check_semantic_similarity(self, text, anchor_phrases):
-        """Returns True if text is semantically similar to any anchor phrase"""
+        """
+        Returns True if text is semantically similar to any anchor phrase.
+
+        Uses SentenceTransformer if available; otherwise falls back to simple substring match.
+        """
         doc_sentences = sent_tokenize(text)
         if not doc_sentences:
             return False
 
-        # Encode all sentences in the transcript
-        doc_embeddings = self.semantic_model.encode(doc_sentences, convert_to_tensor=True)
-        # Encode anchor phrases (e.g., "I like playing cricket")
-        anchor_embeddings = self.semantic_model.encode(anchor_phrases, convert_to_tensor=True)
+        # If semantic model unavailable, fallback to simple keyword matching
+        if self.semantic_model is None:
+            text_lower = text.lower()
+            return any(phrase.lower() in text_lower for phrase in anchor_phrases)
 
-        cosine_scores = util.cos_sim(doc_embeddings, anchor_embeddings)
-
-        max_score = float(cosine_scores.max())
-        return max_score > 0.35
+        # Full embedding-based semantic similarity
+        try:
+            doc_embeddings = self.semantic_model.encode(doc_sentences, convert_to_tensor=True)
+            anchor_embeddings = self.semantic_model.encode(anchor_phrases, convert_to_tensor=True)
+            cosine_scores = util.cos_sim(doc_embeddings, anchor_embeddings)
+            max_score = float(cosine_scores.max())
+            return max_score > 0.35
+        except Exception as e:
+            print("Semantic similarity failed, falling back to keyword:", e)
+            text_lower = text.lower()
+            return any(phrase.lower() in text_lower for phrase in anchor_phrases)
 
     # --- 3. MAIN PIPELINE ---
     def analyze(self, transcript_text, duration_sec):
-        # Basic stats
         word_count = len(word_tokenize(transcript_text))
 
-        # 1. Speech Rate (10%)
         s_rate, fb_rate = self.calculate_speech_rate(word_count, duration_sec)
-
-        # 2. Grammar (10%)
         s_gram, fb_gram = self.calculate_grammar(transcript_text, word_count)
-
-        # 3. Vocabulary (10%)
         s_vocab, fb_vocab = self.calculate_vocabulary(transcript_text, word_count)
-
-        # 4. Clarity (15%)
         s_clar, fb_clar = self.calculate_clarity(transcript_text, word_count)
-
-        # 5. Engagement (15%)
         s_eng, fb_eng = self.calculate_engagement(transcript_text)
 
-        # 6. Content & Structure (40%)
         structure_data = self.check_content_structure(transcript_text)
         s_salut = structure_data['salutation_score']
         s_cont = structure_data['content_score']
         s_flow = structure_data['flow_score']
 
-        # TOTAL SCORE CALCULATION
         total_score = s_rate + s_gram + s_vocab + s_clar + s_eng + s_salut + s_cont + s_flow
-        total_score = min(total_score, 100)  # Cap at 100 just in case
+        total_score = min(total_score, 100)
 
         return {
             "overall_score": round(total_score, 1),
