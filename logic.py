@@ -15,8 +15,14 @@ class IntroFY:
         # Load Spacy for NER (Named Entity Recognition)
         try:
             self.nlp = spacy.load("en_core_web_sm")
-        except:
-            print("Warning: Large model not found. Using blank 'en' model. Run setup_env.py to fix.")
+        except OSError:
+            # Model not installed: auto-download (works on Vercel + fresh envs)
+            from spacy.cli import download
+            print("Spacy model not found. Downloading 'en_core_web_sm'...")
+            download("en_core_web_sm")
+            self.nlp = spacy.load("en_core_web_sm")
+        except Exception as e:
+            print("Spacy failed to load, falling back to blank 'en' model:", e)
             self.nlp = spacy.blank("en")
 
         # Disable LanguageTool completely 
