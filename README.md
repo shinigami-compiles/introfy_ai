@@ -1,9 +1,3 @@
-Here is a clean, professional, **GitHub-ready README.md** for your project **“IntroFY AI”**.
-
-You can copy-paste this directly into a `README.md` file at the root of your project.
-
----
-
 # 📘 **IntroFY AI – Smart Intro Evaluation System**
 
 IntroFY AI is an intelligent web application that **analyzes spoken or written introductions** and provides:
