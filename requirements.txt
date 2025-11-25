@@ -13,4 +13,5 @@ textstat==0.7.3
 openpyxl==3.1.2
 torch==2.2.0
 gunicorn==21.2.0
+language-tool-python==2.7.1
 
