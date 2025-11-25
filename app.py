@@ -14,10 +14,17 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Max upload size 16MB
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# --- INITIALIZE IntroFY AI SCORER ---
-# We initialize this globally so we don't reload models on every request
-print("... Initializing IntroFY AI Scorer (App Startup) ...")
-scorer = IntroFY()
+# --- LAZY-INITIALIZED IntroFY AI SCORER ---
+# We lazy-load this so heavy models are only loaded on first /analyze request,
+# not during app startup (important for deployment timeouts).
+scorer = None
+
+def get_scorer():
+    global scorer
+    if scorer is None:
+        print("... Lazy-loading IntroFY AI Scorer (first /analyze request) ...")
+        scorer = IntroFY()
+    return scorer
 
 # --- HELPER FUNCTIONS ---
 def allowed_file(filename):
@@ -90,14 +97,17 @@ def analyze():
         flash("Please enter a valid speech duration in seconds.")
         return redirect(url_for('home'))
 
-    # 4. Run Analysis using Logic.py
-    results = scorer.analyze(transcript_text, duration)
+    # 4. Run Analysis using Logic.py (lazy-loaded scorer)
+    s = get_scorer()
+    results = s.analyze(transcript_text, duration)
 
     # 5. Render Results Page
-    return render_template('result.html', 
-                           score=results['overall_score'], 
-                           breakdown=results['breakdown'],
-                           transcript_snippet=transcript_text[:200] + "...")
+    return render_template(
+        'result.html', 
+        score=results['overall_score'], 
+        breakdown=results['breakdown'],
+        transcript_snippet=transcript_text[:200] + "..."
+    )
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
