@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="s_1.png" width="100%">
+</p>
+
 # 📘 **IntroFY AI – Smart Intro Evaluation System**
 
 IntroFY AI is an intelligent web application that **analyzes spoken or written introductions** and provides:
@@ -12,6 +16,34 @@ IntroFY AI is an intelligent web application that **analyzes spoken or written i
 Built with **Flask**, **spaCy**, **Sentence-Transformers**, **NLTK**, and smart fallback logic to ensure compatibility even on older systems.
 
 ---
+
+## 📸 UI Preview
+
+<table>
+  <tr>
+    <td align="center">
+      <strong>Home Page</strong><br>
+      <img src="s_1.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Manual Input</strong><br>
+      <img src="s_3.png" width="400">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Result Page</strong><br>
+      <img src="s_4.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Analysis Breakdown</strong><br>
+      <img src="s_5.png" width="400">
+    </td>
+  </tr>
+</table>
+
+---
+
 
 ## 🚀 Features
 
